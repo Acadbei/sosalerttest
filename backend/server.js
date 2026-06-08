@@ -48,7 +48,11 @@ app.post('/api/users', (req, res) => {
     users.push(newUser);
     res.status(201).json(newUser);
 });
-
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok'
+  });
+});
 // Socket.io connection logic
 io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
