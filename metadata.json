@@ -1,0 +1,6 @@
+{
+  "name": "SOS Alert",
+  "description": "Автоматическая система экстренного оповещения граждан при чрезвычайных ситуациях",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
