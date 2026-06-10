@@ -1,1 +1,1 @@
-Muallif : Asadbek Abdumannopov
+Muallif : Azamat Kurbanbayev
