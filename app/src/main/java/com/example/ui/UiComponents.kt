@@ -200,7 +200,7 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "SOS Alert",
+                text = "Ogoh-Alert",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1A1A1A)
@@ -1376,7 +1376,7 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
                     val context = LocalContext.current
                     val prefs = remember { context.getSharedPreferences("sos_alert_prefs", Context.MODE_PRIVATE) }
                     var dbUrlInput by remember {
-                        mutableStateOf(prefs.getString("firebase_db_url", "https://sosalert-f9a99-default-rtdb.firebaseio.com/") ?: "https://sosalert-f9a99-default-rtdb.firebaseio.com/")
+                        mutableStateOf(prefs.getString("firebase_db_url", "https://sosalert-f9a99-default-rtdb.firebaseio.com") ?: "https://sosalert-f9a99-default-rtdb.firebaseio.com")
                     }
                     var isEditingUrl by remember { mutableStateOf(false) }
 
@@ -1396,7 +1396,7 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
                         ) {
                             TextButton(onClick = {
                                 isEditingUrl = false
-                                dbUrlInput = prefs.getString("firebase_db_url", "https://sosalert-f9a99-default-rtdb.firebaseio.com/") ?: "https://sosalert-f9a99-default-rtdb.firebaseio.com/"
+                                dbUrlInput = prefs.getString("firebase_db_url", "https://sosalert-f9a99-default-rtdb.firebaseio.com") ?: "https://sosalert-f9a99-default-rtdb.firebaseio.com"
                             }) {
                                 Text("ОТМЕНА", fontSize = 12.sp, color = Color.Gray)
                             }
@@ -1762,7 +1762,7 @@ fun EmergencyOverlayScreen(
                 }
             }
 
-            // 2. Main Alert Header Area
+            // Scrollable Content Region
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -1770,13 +1770,14 @@ fun EmergencyOverlayScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Top
             ) {
+                Spacer(modifier = Modifier.height(16.dp))
                 // Pulse warning ring icon
                 Box(
                     modifier = Modifier
                         .padding(bottom = 16.dp)
-                        .size(100.dp * warningScale)
+                        .size(90.dp * warningScale)
                         .background(Color.White.copy(alpha = 0.12f), CircleShape)
                         .padding(12.dp)
                         .background(Color.White.copy(alpha = 0.08f), CircleShape),
@@ -1784,7 +1785,7 @@ fun EmergencyOverlayScreen(
                 ) {
                     Text(
                         text = "⚠️",
-                        fontSize = 42.sp,
+                        fontSize = 38.sp,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -1808,18 +1809,18 @@ fun EmergencyOverlayScreen(
                 // Alert Title (e.g. Воздушная Тревога)
                 Text(
                     text = alert.title,
-                    fontSize = 32.sp,
+                    fontSize = 30.sp,
                     fontWeight = FontWeight.Black,
                     color = Color.White,
                     textAlign = TextAlign.Center,
-                    lineHeight = 38.sp,
+                    lineHeight = 36.sp,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
                 // Subtitle description snippet
                 Text(
                     text = "Внимание! Зафиксирована непосредственная опасность.",
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White.copy(alpha = 0.9f),
                     textAlign = TextAlign.Center,
@@ -1840,28 +1841,23 @@ fun EmergencyOverlayScreen(
                             fontWeight = FontWeight.Bold,
                             color = Color.White.copy(alpha = 0.6f),
                             letterSpacing = 1.2.sp,
-                            modifier = Modifier.padding(bottom = 6.dp)
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
                         Text(
                             text = alert.instructions,
-                            fontSize = 15.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Normal,
                             color = Color.White,
-                            lineHeight = 22.sp
+                            lineHeight = 24.sp
                         )
                     }
                 }
-            }
 
-            // 3. Proximity Location Section
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp)
-            ) {
-                // Pull nearest or mock data
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 3. Proximity Location Section
                 val shelterName = nearestShelterResult?.safeZone?.name ?: "Убежище №12 (Подземное)"
-                val shelterAddress = nearestShelterResult?.safeZone?.description ?: "Ул. Навои, 24 (Подземный паркинг)"
+                val shelterAddress = nearestShelterResult?.safeZone?.description ?: "Откройте карту для выбора ближайшего"
                 val distanceKm = nearestShelterResult?.distanceKm
                 val estMinutes = nearestShelterResult?.estMinutes ?: 6
 
@@ -1872,16 +1868,16 @@ fun EmergencyOverlayScreen(
                         String.format(Locale.getDefault(), "%.1f км", distanceKm)
                     }
                 } else {
-                    "450 метров"
+                    "Поиск..."
                 }
 
                 val targetLat = nearestShelterResult?.safeZone?.latitude ?: 41.3111
                 val targetLon = nearestShelterResult?.safeZone?.longitude ?: 69.2797
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(24.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
                 ) {
                     Column(
@@ -1894,11 +1890,11 @@ fun EmergencyOverlayScreen(
                             // Circular/rounded icon box
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .background(Color(0xFFFFF1F1), RoundedCornerShape(16.dp)),
+                                    .size(44.dp)
+                                    .background(Color(0xFFFFF1F1), RoundedCornerShape(14.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("🏢", fontSize = 24.sp)
+                                Text("🏢", fontSize = 22.sp)
                             }
                             Spacer(modifier = Modifier.width(14.dp))
                             Column(
@@ -1906,10 +1902,10 @@ fun EmergencyOverlayScreen(
                             ) {
                                 Text(
                                     text = shelterName,
-                                    fontSize = 17.sp,
+                                    fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A),
-                                    lineHeight = 21.sp
+                                    lineHeight = 20.sp
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
@@ -1962,7 +1958,7 @@ fun EmergencyOverlayScreen(
                             onClick = {
                                 val mapsUrl = "https://www.google.com/maps/dir/?api=1&destination=$targetLat,$targetLon"
                                 try {
-                                    val mapsIntent = Intent(Intent.ACTION_VIEW, Uri.parse(mapsUrl))
+                                    val mapsIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(mapsUrl))
                                     context.startActivity(mapsIntent)
                                 } catch (e: Exception) {
                                     Log.e("EmergencySiren", "Cannot open maps intent", e)
@@ -1970,15 +1966,15 @@ fun EmergencyOverlayScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(52.dp),
+                                .height(48.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
                                 text = "ПОСТРОИТЬ МАРШРУТ",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 letterSpacing = 0.5.sp
                             )
                             Spacer(modifier = Modifier.width(6.dp))

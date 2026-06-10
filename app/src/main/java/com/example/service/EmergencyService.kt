@@ -93,17 +93,38 @@ class EmergencyService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val stopIntent = Intent(this, EmergencyService::class.java).apply {
+            action = ACTION_STOP_ALARM
+        }
+        val stopPendingIntent = PendingIntent.getService(
+            this,
+            1,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_warning)
-            .setContentTitle("⚠️ $title")
-            .setContentText(instructions)
+            .setContentTitle("⚠️ ЭКСТРЕННОЕ СООБЩЕНИЕ")
+            .setContentText(title)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setFullScreenIntent(fullScreenPendingIntent, true)
             .setOngoing(true)
             .setAutoCancel(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(instructions))
+            .setColor(android.graphics.Color.parseColor("#B71C1C"))
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(title)
+                    .bigText(instructions)
+                    .setSummaryText(if (priority == "CRITICAL") "КРИТИЧЕСКИЙ УРОВЕНЬ" else "ВЫСОКИЙ ПРИОРИТЕТ")
+            )
+            .addAction(
+                android.R.drawable.ic_media_pause, 
+                "ОТКЛЮЧИТЬ СИРЕНУ", 
+                stopPendingIntent
+            )
             .build()
 
         startForeground(NOTIFICATION_ID, notification)
@@ -217,7 +238,7 @@ class EmergencyService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Экстренные Оповещения SOS Alert",
+                "Экстренные Оповещения Ogoh-Alert",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Канал для мгновенных тревожных извещений граждан с сиреной"

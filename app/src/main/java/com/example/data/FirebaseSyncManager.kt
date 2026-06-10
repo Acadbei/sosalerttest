@@ -27,6 +27,7 @@ object FirebaseSyncManager {
     private val scope = CoroutineScope(Dispatchers.IO)
     private var isSyncing = false
     private var localDatabase: AppDatabase? = null
+    private var appContext: Context? = null
 
     private val _connectionStatus = MutableStateFlow("Ожидание запуска...")
     val connectionStatus: StateFlow<String> = _connectionStatus.asStateFlow()
@@ -35,6 +36,7 @@ object FirebaseSyncManager {
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
     fun init(context: Context) {
+        appContext = context.applicationContext
         if (database != null) return
         try {
             _connectionStatus.value = "Инициализация..."
@@ -42,7 +44,8 @@ object FirebaseSyncManager {
             val options = FirebaseOptions.Builder()
                 .setApplicationId("1:1252f45fdc07400f8:android:59bc73fdb89a912c")
                 .setProjectId("sosalert-f9a99")
-                .setDatabaseUrl("https://sosalert-f9a99-default-rtdb.firebaseio.com/")
+                .setApiKey("AIzaSyDummyKeyForFirebaseDatabaseAccess123")
+                .setDatabaseUrl("https://sosalert-f9a99-default-rtdb.firebaseio.com")
                 .build()
 
             val app = if (FirebaseApp.getApps(context).isEmpty()) {
@@ -52,7 +55,10 @@ object FirebaseSyncManager {
             }
 
             val prefs = context.getSharedPreferences("sos_alert_prefs", Context.MODE_PRIVATE)
-            val customUrl = prefs.getString("firebase_db_url", "https://sosalert-f9a99-default-rtdb.firebaseio.com/") ?: "https://sosalert-f9a99-default-rtdb.firebaseio.com/"
+            var customUrl = prefs.getString("firebase_db_url", "https://sosalert-f9a99-default-rtdb.firebaseio.com") ?: "https://sosalert-f9a99-default-rtdb.firebaseio.com"
+            if (customUrl.endsWith("/")) {
+                customUrl = customUrl.dropLast(1)
+            }
             Log.d("FirebaseSyncManager", "Initializing Firebase Realtime Database with URL: $customUrl")
 
             database = FirebaseDatabase.getInstance(app, customUrl).apply {
@@ -100,8 +106,34 @@ object FirebaseSyncManager {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 scope.launch {
                     val alert = mapSnapshotToAlert(snapshot) ?: return@launch
+                    val existing = databaseInstance.alertDao.getAlertById(alert.alertId)
                     databaseInstance.alertDao.insertAlert(alert)
                     Log.d("FirebaseSyncManager", "Alert added locally from Firebase: ${alert.title}")
+
+                    if (existing == null && appContext != null) {
+                        val prefs = appContext!!.getSharedPreferences("sos_alert_prefs", Context.MODE_PRIVATE)
+                        val role = prefs.getString("session_role", "citizen") ?: "citizen"
+                        val uid = prefs.getString("session_uid", "unknown") ?: "unknown"
+                        val ackSet = prefs.getStringSet("acknowledged_$uid", emptySet()) ?: emptySet()
+                        val currentTime = System.currentTimeMillis()
+
+                        if (role == "citizen" && !ackSet.contains(alert.alertId) && (currentTime - alert.timestamp < 120 * 60 * 1000)) {
+                            val serviceIntent = android.content.Intent(appContext, com.example.service.EmergencyService::class.java).apply {
+                                putExtra(com.example.service.EmergencyService.EXTRA_TITLE, alert.title)
+                                putExtra(com.example.service.EmergencyService.EXTRA_INSTRUCTIONS, alert.instructions)
+                                putExtra(com.example.service.EmergencyService.EXTRA_PRIORITY, alert.priority)
+                            }
+                            try {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                    appContext!!.startForegroundService(serviceIntent)
+                                } else {
+                                    appContext!!.startService(serviceIntent)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("FirebaseSyncManager", "Failed to start EmergencyService", e)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -189,8 +221,12 @@ object FirebaseSyncManager {
     }
 
     fun updateDatabaseUrl(context: Context, newUrl: String) {
+        var cleanUrl = newUrl.trim()
+        if (cleanUrl.endsWith("/")) {
+            cleanUrl = cleanUrl.dropLast(1)
+        }
         val prefs = context.getSharedPreferences("sos_alert_prefs", Context.MODE_PRIVATE)
-        prefs.edit().putString("firebase_db_url", newUrl).apply()
+        prefs.edit().putString("firebase_db_url", cleanUrl).apply()
         
         val currentDb = localDatabase
         
